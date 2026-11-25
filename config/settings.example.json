@@ -1,7 +1,8 @@
 {
   "gameExecutable": "",
-  "runtimeInstallDirectory": "",
-  "sourceDirectory": "",
+  "engineSourceDirectory": "%USERPROFILE%\\Downloads\\DexNom-UltraPerformance-v0.1",
+  "runtimeDirectory": "%LOCALAPPDATA%\\DexNom Ultra Performance v0.1",
+  "defaultProfile": "UltraSafe1080",
   "updateChannel": "stable",
   "createBackups": true
 }
