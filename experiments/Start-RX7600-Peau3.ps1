@@ -59,10 +59,15 @@ try {
     $computer = Get-CimInstance Win32_ComputerSystem -ErrorAction Stop
     $ramGiB = [Math]::Round(([double]$computer.TotalPhysicalMemory / 1GB), 1)
     $gpuNames = @(Get-CimInstance Win32_VideoController -ErrorAction Stop | Select-Object -ExpandProperty Name)
-    $pagefiles = @(Get-CimInstance Win32_PageFileUsage -ErrorAction Stop)
-    $pagefileGiB = 0.0
-    foreach ($pagefile in $pagefiles) {
-        $pagefileGiB += ([double]$pagefile.AllocatedBaseSize / 1024.0)
+    $pagefileUsage = @(Get-CimInstance Win32_PageFileUsage -ErrorAction Stop)
+    $pagefileSettings = @(Get-CimInstance Win32_PageFileSetting -ErrorAction SilentlyContinue)
+    $pagefileAllocatedGiB = 0.0
+    foreach ($pagefile in $pagefileUsage) {
+        $pagefileAllocatedGiB += ([double]$pagefile.AllocatedBaseSize / 1024.0)
+    }
+    $pagefileMaxGiB = 0.0
+    foreach ($pagefile in $pagefileSettings) {
+        $pagefileMaxGiB += ([double]$pagefile.MaximumSize / 1024.0)
     }
 } catch {
     throw "Could not read the hardware/memory preflight. No source was built and no game was launched. $($_.Exception.Message)"
@@ -72,15 +77,20 @@ Write-Host ''
 Write-Host 'RX 7600 / PEAU3 HARDWARE PREFLIGHT' -ForegroundColor Cyan
 Write-Host ("GPU: " + ($gpuNames -join '; '))
 Write-Host ("Physical RAM: {0:N1} GiB" -f $ramGiB)
-Write-Host ("Currently allocated page file: {0:N1} GiB" -f $pagefileGiB)
+Write-Host ("Currently allocated page file: {0:N1} GiB" -f $pagefileAllocatedGiB)
+if ($pagefileSettings.Count -gt 0 -and $pagefileMaxGiB -gt 0) {
+    Write-Host ("Configured page-file maximum: {0:N1} GiB" -f $pagefileMaxGiB)
+} else {
+    Write-Host 'Configured page-file maximum: system-managed or not reported by Windows'
+}
 
 if (!(($gpuNames -join '; ') -match 'RX 7600')) {
     Write-Warning 'The documented test was on an AMD RX 7600 8 GB. Your detected GPU differs; results may not transfer.'
 }
 if ($ramGiB -lt 32) {
     Write-Warning 'The matching RX 7600 test used 32 GiB physical RAM and held about 21 GiB during a 10-minute run. With less RAM, Windows may page heavily and the game may stutter or fail.'
-    if ($pagefileGiB -lt 20) {
-        throw 'Low-memory safety stop: less than 32 GiB physical RAM and less than 20 GiB currently allocated page file. Increase/verify the Windows page file and rerun. Alligator will not change paging or registry settings.'
+    if ($pagefileSettings.Count -gt 0 -and $pagefileMaxGiB -gt 0 -and $pagefileMaxGiB -lt 20) {
+        throw 'Low-memory safety stop: less than 32 GiB physical RAM and the configured page-file maximum is below 20 GiB. Review Windows virtual-memory settings and rerun. Alligator will not change paging or registry settings.'
     }
     $answer = Read-Host 'To continue despite the lower physical RAM and possible paging, type LOW-RAM-TEST'
     if ($answer -cne 'LOW-RAM-TEST') {
