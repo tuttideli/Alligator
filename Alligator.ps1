@@ -155,6 +155,9 @@ try {
     $selectedGame = Get-SelectedGamePath $config $runtimeDir $GamePath
     $selectedProfile = if (![string]::IsNullOrWhiteSpace($Profile)) { $Profile } else { Get-Setting $config 'defaultProfile' 'UltraSafe1080' }
 
+    # The v0.6 package keeps its start script under ultra\\Start-Ultra.ps1.
+    # This check avoids confusing the external source checkout with the installed runtime.
+
     if ($selectedProfile -notin (Get-ProfileNames)) {
         throw "Unknown profile '$selectedProfile'. Run .\Alligator.ps1 -Action Profiles to list valid v0.6 profiles."
     }
