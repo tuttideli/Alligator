@@ -19,6 +19,8 @@ The accompanying runtime log initially reported roughly 29-30 FPS while it was d
 
 These observations do not prove that one counter alone causes every visual defect. They do show that the early 30 FPS readings were not representative of the fully populated scene and that both renderer coverage and resource pressure need attention.
 
+A closer RX 7600 comparison is now available in the isolated Peau3 experiment. Its documented Windows run used an RX 7600 8 GB with 32 GB RAM and a 32 GB page file, reaching about 6.2-6.5 FPS in the tested prison scene with characters, hair, skin and environment rendered. It held about 21 GB of memory. This is not a result for a 16 GB system-RAM machine; the launcher deliberately prompts before a low-memory test.
+
 ## Run and analyze a controlled baseline
 
 From the Alligator folder, run:
@@ -42,6 +44,11 @@ The analyzer is read-only with respect to the runtime. It does not modify the ga
 
 Keep the same save, camera, scene and cache state. Let shader and texture streaming settle before measuring. A menu or loading-screen FPS result is not a world-scene benchmark.
 
+## RX 7600 Peau3 comparison
+
+Use the separate command `.Alligator.ps1 -Action TestRX7600` to build the reviewed Peau3 commit. This is a different renderer executable with its own cache and data folders. It is the best matching public test located for an RX 7600 8 GB, but it was measured with 32 GB RAM and a large page file. The script does not change the current DexNom installation.
+
+The result is still experimental: black/chrome material artifacts and delayed textures were reported. Do not combine the untested `fix/partly-clamp` branch with this baseline before a clean Windows build and controlled comparison.
 ## What to collect after a run
 
 The v0.6 Start-Ultra script automatically exports a post-game report after a confirmed session end. It creates a folder under Downloads named DexNom-Ultimo-Jogo-.... It can include:
