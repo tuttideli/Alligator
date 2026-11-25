@@ -44,6 +44,18 @@ https://github.com/Belobug/VIctory-Belobug-AMD/issues/6
 
 Reviewed AMD experiment commit: 4f62c2a5e27e7beebf3e8d68f77898e43dc7b77c.
 
+### AntoninMichelq/VIctory-forkAMD — closest RX 7600 match
+
+This fork's README and HANDOFF document a Windows test on an AMD RX 7600 8 GB with 32 GB physical RAM and a 32 GB page file. Its Peau3 build (`jouer/peau3`, commit `b74ac64da2e289cc632980cf8e508c2d1ba909ac`) measured about 6.2-6.5 FPS in the prison scene over a 10-minute run, around 21 GB of memory, and rendered buildings, cells, characters, hair, skin and sky. The measured configuration rendered internally at 1080p and used PC FidelityFX to upscale to the fixed 4K output.
+
+The fork's HANDOFF still reports intermittent chrome/black patches on clothing, skin and posters, plus late texture arrival. Its `fix/partly-clamp` branch attempts to stop partly mapped texture mips from sampling zeros, but the HANDOFF explicitly says that branch had not yet passed a Windows build or a game run. It is not included in Alligator's tested Peau3 launcher.
+
+Alligator now offers an isolated test of the measured commit. The script keeps a separate engine checkout, release build, shader cache, save/data folder and run log. It requires the PC FidelityFX SDK DLL for the measured 1080p-to-4K path. This is the strongest directly relevant public test found for an RX 7600, but 16 GB of system RAM is below the measured 32 GB configuration; the test may page heavily or fail.
+
+Sources:
+- https://github.com/AntoninMichelq/VIctory-forkAMD
+- https://github.com/AntoninMichelq/VIctory-forkAMD/blob/main/HANDOFF.md
+- https://github.com/AntoninMichelq/VIctory-forkAMD/commit/b74ac64da2e289cc632980cf8e508c2d1ba909ac
 ### WillyboPeep/victory-all-forks
 
 This is explicitly a test merge of upstream and community forks, not an original implementation. Its documentation lists fixes relevant to the reported defects: meshlet culling, descriptor exhaustion, GPU-written light readback, fog, shadow masks, hair, blend-shape skinning, fire and material shaders. It reports a 5.7 FPS result in one matched view on an RTX 4090 24 GB after selected changes; other test runs are lower. It still lists black shadows and incomplete ray tracing:
@@ -58,11 +70,11 @@ https://github.com/ivall/xcl
 ## Practical plan for RX 7600 8 GB
 
 1. Preserve the known-working v0.6 runtime and its shader cache.
-2. Run Start-Baseline-Diagnostic.ps1 to capture a raw-log Baseline test. Compare it with UltraSafe1080 under the same save, camera and scene.
-3. Do not treat the AMD fork as an FPS upgrade for this PC yet. Its measured system is substantially larger, its README still reports 5-8 FPS, and an RX 7600 Windows crash has been reported. Keep the test isolated and defer it until the reported root-signature issue and memory needs are understood.
-4. Inspect Dropped ... without a host pipeline: <reason> lines and buffer-view refusals from the per-run log.
-5. Identify specific missing shader/material/light paths in the renderer source. Port only a narrow fix with author attribution, compatible GPL-3.0-or-later licensing, a clean build and a binary rollback.
-6. Benchmark one change at a time. The goal is to reduce missing host pipelines and resource/copy pressure before making claims about FPS.
+2. Use the isolated Peau3 RX 7600 test as the primary comparison: it is pinned to the measured `b74ac64` commit, uses a separate build/cache/data directory and has a reported 6.2-6.5 FPS result on the same GPU model. Its 32 GB RAM / 32 GB page-file setup is materially larger than a 16 GB RAM PC.
+3. Keep the Belobug AMD fork as a separate research comparison, not the first recommended test: its measured machine is much stronger and it has a specific RX 7600 Windows crash report.
+4. Analyze the Peau3 log for late texture streaming and black/chrome artifacts. The untested `fix/partly-clamp` change is a candidate only after a Windows build and a matching scene test.
+5. Inspect current DexNom logs for `Dropped ... without a host pipeline: <reason>` and buffer-view refusals.
+6. Benchmark one change at a time. The goal is to reduce missing host pipelines and resource/copy pressure without trading correct character/material output for FPS.
 
 Do not import memory settings tuned for 12/16/24 GB GPUs into an 8 GB RX 7600. Do not enable ray tracing on the AMD test fork: its own README reports device-removal/stability concerns. Avoid registry/TDR changes and broad cache deletion.
 
