@@ -2,26 +2,44 @@
 
 ## HUD fields
 
-- `FPS` and `ms/frame`: presentation rate and frame interval.
-- `draws/frame`: draw workload observed by the runtime.
-- `GPU wait`: time spent waiting for submitted GPU work; it is not GPU utilization.
-- `CPU prep`: time attributed to CPU-side frame preparation.
-- `Copy-back`: time in the title-memory copy-back path.
-- `Dropped`: draws/dispatches counted because a host pipeline was unavailable, untranslated, refused, or still being made. It is not the number of frames discarded by the display.
+- FPS and ms/frame: presentation rate and frame interval.
+- draws/frame: draw workload observed by the runtime.
+- GPU wait: time spent waiting for submitted GPU work; it is not GPU utilization.
+- CPU prep: time attributed to CPU-side frame preparation.
+- Copy-back: time in the title-memory copy-back path.
+- Dropped: draws/dispatches counted because a host pipeline was unavailable, untranslated, refused, or still being made. It is not the number of frames discarded by the display.
 
 Diagnostic timing categories can overlap and should not be added as if they were exclusive slices of one stopwatch.
 
+## Current RX 7600 symptoms (25 November 2026)
+
+The later indoor screenshot shows ceiling fixtures emitting light while much of the room remains very dark; character materials and surface detail are incomplete. This is consistent with the renderer's known missing lighting/shader work, not something a display brightness slider can reliably repair.
+
+The accompanying runtime log initially reported roughly 29-30 FPS while it was drawing only 6-13 draws per frame. Once the scene became complex, samples fell to about 0.2-1.1 FPS, with thousands of draws, hundreds to thousands of dropped draws, and a texture queue that rose above 18,000 entries. One sample reported 6,304 dropped draws; another reported 1.1 FPS with roughly 1,158 draws, 580 dropped draws and about 10,414 pending textures. The log also showed the local-memory counter reaching roughly 7.5 GiB against a displayed budget near 6.3 GiB, plus repeated buffer-view refusals.
+
+These observations do not prove that one counter alone causes every visual defect. They do show that the early 30 FPS readings were not representative of the fully populated scene and that both renderer coverage and resource pressure need attention.
+
+## Run a controlled baseline
+
+From the Alligator folder, run:
+
+    .\Start-Baseline-Diagnostic.ps1
+
+This wrapper always launches the existing Baseline profile and enables raw logging. It is intended to compare against UltraSafe1080 without changing the renderer source, game files or shader cache.
+
+Keep the same save, camera, scene and cache state. Let shader and texture streaming settle before measuring. Record the FPS, ms/frame, draws, dropped count, texture queue, local/non-local memory, CPU prep, GPU wait and copy-back. A menu or loading-screen FPS result is not a world-scene benchmark.
+
 ## What to collect after a run
 
-The v0.6 Start-Ultra script automatically exports a post-game report after a confirmed session end. It creates a folder under Downloads named `DexNom-Ultimo-Jogo-...`. It can include:
-- `report-index.json`: session identity, provenance and limitations.
-- `runtime-logs`: matched raw runtime logs.
-- `session-reports`: parsed metrics and selected events.
-- `first-graphics-events.txt` and `last-runtime-lines.txt`: useful context for missing pipelines and device errors.
-- `windows-events.json`: selected Windows display, hardware and application events.
+The v0.6 Start-Ultra script automatically exports a post-game report after a confirmed session end. It creates a folder under Downloads named DexNom-Ultimo-Jogo-.... It can include:
+- report-index.json: session identity, provenance and limitations.
+- runtime-logs: matched raw runtime logs.
+- session-reports: parsed metrics and selected events.
+- first-graphics-events.txt and last-runtime-lines.txt: useful context for missing pipelines and device errors.
+- windows-events.json: selected Windows display, hardware and application events.
 
 Before sharing, review local paths and account-folder names. Do not send game files, caches, saves or memory dumps.
 
 ## Controlled comparisons
 
-Keep the same save, camera, scene, profile family and cache state. Let streaming settle before measuring. Change one profile or code change per run. Stop testing after a GPU device removal or system driver reset; inspect the report before relaunching.
+Change one profile or code change per run. Do not combine UltraVisual, memory-budget changes and shader experiments in one test. Stop testing after a GPU device removal or system driver reset; inspect the report before relaunching.
