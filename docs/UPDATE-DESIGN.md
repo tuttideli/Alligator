@@ -1,13 +1,17 @@
 # Update design
 
-The updater will eventually:
+Alligator is a public GitHub repository. The self-updater follows its configured Git remote and branch using fast-forward-only updates.
 
-1. Read a version manifest from the authenticated private repository.
-2. Validate every downloaded file against a SHA-256 digest from the manifest.
-3. Stage files before changing the installed runtime.
-4. Verify staged files and preserve a timestamped backup.
-5. Apply only approved project-owned files.
-6. Roll back replaced files if verification or installation fails.
-7. Never download or redistribute game files, save data, caches, or memory dumps.
+The current updater updates the Alligator scripts and documentation only. It does not update or overwrite the DexNom/VIctory engine or game files.
 
-The initial repository only defines the intended contract. Update execution is intentionally disabled until the existing v0.6 scripts and payload format have been reviewed and mapped accurately.
+A future engine update channel must:
+1. Pin a reviewed upstream/fork commit rather than blindly tracking a moving branch.
+2. Verify the applicable license and preserve author attribution and source history.
+3. Stage files before changing an installed runtime.
+4. Verify every staged file against a SHA-256 manifest.
+5. Preserve a timestamped backup.
+6. Apply only engine files from the reviewed commit.
+7. Roll back replaced files if verification or installation fails.
+8. Keep game files, saves, caches, logs, and memory dumps outside the repository.
+
+The AMD experiment currently clones and checks out a reviewed commit in a separate local folder. It builds and runs from that checkout without touching the existing v0.6 installation.
