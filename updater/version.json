@@ -2,8 +2,8 @@
   "product": "Alligator",
   "displayName": "DexNom Ultra launcher",
   "channel": "stable",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minimumUpdaterVersion": "0.1.0",
-  "releaseNotes": "Adds automatic analysis of renderer log counters and graphics warnings for heavy-scene diagnosis.",
+  "releaseNotes": "Adds an isolated RX 7600-tested Peau3 VIctory fork runner with RAM/page-file preflight and FidelityFX configuration.",
   "files": []
 }
