@@ -1,63 +1,56 @@
 # Rendering and performance research
 
-Research snapshot: 25 November 2026. Findings below are from public project documentation and are not promises of performance on another GPU.
+Research snapshot: 25 November 2026. Public fork results are single-machine observations, not forecasts for another GPU.
 
-## Why the current 0.7–0.8 FPS matters
+## What the user's capture proves
 
-The v0.6 runtime HUD in the user's capture shows approximately:
+The DexNom Ultra v0.6 HUD shows approximately:
 - 0.7 FPS and 1,437.9 ms/frame
 - 3,577 draws/frame
-- 3,455 draws or dispatches/frame without a ready host pipeline
-- 408.8 ms GPU wait, 555.0 ms CPU preparation and 451.6 ms copy-back
+- 3,455 draws/frame reported as dropped without a host pipeline
+- GPU wait 408.8 ms, CPU prep 555.0 ms, copy-back 451.6 ms
 - 3,035 MB process RAM
 
-In this renderer, the dropped counter is not a count of ordinary missed presentation frames. Diagnostics count draws/dispatches skipped because no host pipeline exists, including untranslated/refused shaders and pipelines that are not ready. The detailed log should name the reason for each drop. Therefore, skin/material/geometry gaps may be shader or pipeline-coverage problems, not simply low texture quality.
+The dropped counter is not ordinary display-frame loss. The renderer reports draws/dispatches that have no host pipeline, including shaders that did not translate, pipelines refused by the D3D12 driver, and pipelines not ready within the current frame's budget. This can plausibly explain missing skin/material/geometry. The HUD alone cannot tell which reason dominates; the matched runtime log does.
 
-The three timing values are diagnostic timings and may overlap. GPU wait is CPU-side waiting for GPU work to complete, not a direct measurement of GPU utilization. See `crates/victory-gpu/src/pipeline.rs` and `host.rs` in the local v0.6 source for the counter implementation and HUD.
+The diagnostic timing categories can overlap. GPU wait is time attributed to waiting for submitted GPU work, not a direct GPU-utilization measurement. The v0.6 source implements the counters in `crates/victory-gpu/src/host.rs`, `pipeline.rs` and `pipeline/host.rs`.
 
-## Projects worth studying
+The v0.6 source is based on the upstream snapshot documented in its manifest. Its own changelog says the v0.6 visual changes do not complete the game's ray-traced lighting, shader coverage or all materials. Its default `UltraVisual1080` profile enables material-demand sampling and additional early/bake texture work (24 ms / 2500 ms). `UltraSafe1080` omits those experiments and is a better comparison baseline; neither profile is a renderer rewrite.
+
+## Public projects reviewed
 
 ### Marvisak/VIctory
 
-The upstream project is the base runtime and documents that the world renderer remains incomplete, with missing shaders/pipelines and very long frame times. The user's local DexNom v0.6 build is a community fork and not equivalent to the latest upstream state.
-
-- https://github.com/Marvisak/VIctory
+The upstream runtime and D3D12/shader translation base:
+https://github.com/Marvisak/VIctory
 
 ### fxceless/victory-fork
 
-Its 25 November 2026 README reports 8–10 FPS in the first rooms on one Windows 11 PC with an RTX 4070 12 GB, but shadowed areas remain black. The README also describes multiple opt-in changes: asynchronous submission, queue scheduling, indirect-draw handling, card-memory buffer placement, copy batching, staging pools and shader cleanup. The high FPS figure uses a bundle of switches and a different codebase/GPU; it is not a valid RX 7600 prediction.
-
-- https://github.com/fxceless/victory-fork
+README snapshot dated 25 November 2026 reports 8–10 FPS in first rooms on one Windows 11 PC with an RTX 4070 12 GB, but shadowed areas remain black. Its README documents opt-in asynchronous submission, queue scheduling, indirect draw handling, card-memory buffer placement and shader changes. These are a divergent codebase and a different GPU. Some latest experiments are explicitly unmeasured or have unresolved stability problems:
+https://github.com/fxceless/victory-fork
 
 ### Belobug/VIctory-Belobug-AMD
 
-Its 25 November 2026 README reports 5–8 FPS on a single RX 9070 XT 16 GB test machine. It has explicit AMD fixes for quad/helper-pixel reads, integer target blending, depth twins and GPU memory handling. It also implements a sky-following ambient-light approximation because the game's ray-traced indirect light is not available. The README says the approximation is not true ray-traced global illumination and lists remaining issues, including the in-game phone and high memory use.
+README snapshot dated 25 November 2026 reports 5–8 FPS on a single RX 9070 XT 16 GB, Ryzen 7 9800X3D and 64 GB RAM. It contains AMD-focused corrections for helper-pixel/quad reads (including skin), blend-shape skinning, hair/material shaders, integer targets, shadow/depth handling and GPU memory. It uses an ambient-light approximation that follows the sky because the game's ray-traced indirect lighting is not yet working. The README still lists missing in-game phone rendering and very high memory use. RX 9070 XT 16 GB is substantially more capable than this user's RX 7600 8 GB, so the reported FPS is not transferable:
+https://github.com/Belobug/VIctory-Belobug-AMD
 
-This is the closest public AMD reference found, but RX 9070 XT 16 GB is a much higher-tier card than the user's RX 7600 8 GB. It must be ported selectively and measured; do not transplant its entire renderer blindly.
+### WillyboPeep/victory-all-forks
 
-- https://github.com/Belobug/VIctory-Belobug-AMD
-
-### victory-all-forks
-
-This test merge documents fixes that directly match the visible defects being reported: meshlet culling, descriptor-table exhaustion, GPU-written light-buffer readback, fog reconstruction, shadow masks, hair, blend-shape skinning, fire and several material shaders. It reports 2.5–4 FPS on one RTX 4070 PC in its own test snapshot, with black shadow areas still listed as a known issue. The repository describes itself as a merge/test project, not an original fork.
-
-Its source history and authors must be preserved if any of those GPL-3.0-or-later changes are ported.
-
-- https://github.com/WillyboPeep/victory-all-forks
-- https://github.com/WillyboPeep/victory-all-forks/blob/main/ALL-FORKS.md
+This is explicitly a test merge of upstream and community forks, not an original implementation. Its documentation lists changes relevant to the user's defects: meshlet culling, descriptor exhaustion, GPU-written light readback, fog, shadow masks, hair, blend-shape skinning, fire and material shaders. The README reports a 5.7 FPS result in one matched view on an RTX 4090 24 GB after selected changes; other test figures are lower. It still lists black shadows and incomplete ray tracing:
+https://github.com/WillyboPeep/victory-all-forks
+https://github.com/WillyboPeep/victory-all-forks/blob/main/ALL-FORKS.md
 
 ### XCL
 
-XCL is a separate Xbox Series compatibility layer with a different renderer/translator and GPL-2.0-only licensing. Its engineering notes document background pipeline creation, shader/DXIL caching, precompilation and GPU memory windows. These are useful design references, but GPL-2.0-only code must not be copied into the GPL-3.0-or-later VIctory-derived engine without a compatible licensing basis. We can independently implement compatible ideas in Alligator's PowerShell orchestration and evaluate renderer techniques separately.
+XCL is a separate Xbox compatibility project. Its GPL-2.0-only license is not a drop-in license match for VIctory's GPL-3.0-or-later code. Use it as a reference for concepts only unless legal compatibility is established:
+https://github.com/ivall/xcl
 
-- https://github.com/xcl-dev/xcl
-- https://github.com/xcl-dev/xcl/blob/main/HANDOFF.md
+## What to do next on the RX 7600
 
-## Immediate test plan for the RX 7600
+1. Let the current game session end normally so v0.6 exports its matched post-game report. Review local paths/account folder names before sharing.
+2. Inspect `last-runtime-lines.txt` and `first-graphics-events.txt` for repeated lines such as `shader does not translate`, `host pipeline refused`, `no host pipeline`, `not implemented`, texture memory/budget warnings, or device removal.
+3. Run the same save/scene/camera using `UltraSafe1080` as the comparison. Do not change caches or several experimental switches together.
+4. Only then choose a renderer branch/patch. Prefer a separate experimental checkout and separate runtime so the known-working v0.6 binaries remain available for rollback.
+5. Port one compatible GPL-3.0-or-later change at a time, keep original authors/commit history and license notices, rebuild, then compare the same scene.
 
-1. Export the current v0.6 post-game report. The report's per-run log includes the detailed reasons behind `Dropped ... without a host pipeline`.
-2. Compare the same save, camera and scene with `UltraSafe1080` against the current `UltraVisual1080`. UltraVisual1080 enables material-demand sampling and an early/bake texture pass (24 ms / 2,500 ms). UltraSafe1080 keeps the visual presentation path but leaves those two experiments off.
-3. Test `UltraPerf1080` separately; it adds a card-rehash experiment and is not proven faster on an RX 7600.
-4. Only after the dropped-pipeline reasons are known, select one renderer fix at a time from the compatible GPL-3.0-or-later fork history. Rebuild, preserve the shader cache, compare the same scene and keep a binary rollback available.
-
-Do not use RT, driver timeouts, registry/TDR changes, broad cache deletion, or several experimental switches together as an FPS shortcut. The target is correct rendering first, then repeatable frame-time reductions.
+Do not import RX 4090/4070/9070 XT memory sizes or performance switches wholesale into an RX 7600 8 GB setup. In particular, a 4096 MB card-window setting measured on a 24 GB RTX 4090 is not a safe default for an 8 GB card. Do not use RT or driver timeout/registry hacks as an FPS shortcut.
