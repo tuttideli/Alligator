@@ -1,9 +1,9 @@
 {
   "product": "Alligator",
-  "displayName": "DexNom Ultra updater",
+  "displayName": "DexNom Ultra launcher",
   "channel": "stable",
-  "version": "0.0.0",
-  "minimumUpdaterVersion": "0.0.0",
-  "releaseNotes": "Repository initialized. Update delivery is not enabled yet.",
+  "version": "0.1.0",
+  "minimumUpdaterVersion": "0.1.0",
+  "releaseNotes": "Initial launcher, profile and diagnostics orchestration; isolated AMD renderer experiment.",
   "files": []
 }
