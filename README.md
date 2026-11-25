@@ -9,6 +9,7 @@ It keeps orchestration, profile selection, diagnostics and self-update logic sep
 - Alligator.ps1: Windows PowerShell 5.1 entry point for Launch, Build, Doctor, Profiles, Rollback, Report, Collect, TestAMD and Update.
 - Start-Alligator.cmd: double-click launcher for the normal DexNom Ultra v0.6 profile.
 - Start-Baseline-Diagnostic.ps1: launches the unmodified Baseline profile with raw logging for controlled visual/performance diagnosis.
+- Analyze-LastRendererRun.ps1: summarizes the latest runtime log, including heavy-scene frame samples, dropped draws, texture backlog, memory counters and graphics warnings.
 - updater/Update.ps1: fast-forward-only Git self-update for a clean Alligator checkout. It updates this repository only.
 - experiments/Start-AMD-Fork.ps1: isolated build/run of a reviewed AMD-oriented VIctory fork snapshot. It does not replace the existing DexNom Ultra runtime.
 - Local config is created from config/settings.example.json; the actual config/settings.json is ignored by Git.
@@ -35,6 +36,7 @@ It keeps orchestration, profile selection, diagnostics and self-update logic sep
     .\Alligator.ps1 -Profile UltraSafe1080
     .\Alligator.ps1 -Profile Display720
     .\Start-Baseline-Diagnostic.ps1
+    .\Analyze-LastRendererRun.ps1
     .\Alligator.ps1 -Action Report
     .\Alligator.ps1 -Action Collect
     .\Alligator.ps1 -Action Build
@@ -45,7 +47,13 @@ The default profile is UltraSafe1080. It omits v0.6's material-demand and long t
 
 ### Dark interiors, missing textures or unstable FPS
 
-Run Start-Baseline-Diagnostic.ps1 for an A/B baseline. It explicitly launches the existing Baseline profile and enables raw logging, regardless of the profile saved in local settings.json. It does not rebuild the renderer, delete shader caches, change the game files or claim to fix unsupported shaders. After the session ends, inspect the automatically generated DexNom-Ultimo-Jogo report under Downloads.
+Run Start-Baseline-Diagnostic.ps1 for an A/B baseline. It explicitly launches the existing Baseline profile and enables raw logging, regardless of the profile saved in local settings.json. It does not rebuild the renderer, delete shader caches, change the game files or claim to fix unsupported shaders.
+
+After closing the session, run:
+
+    .\Analyze-LastRendererRun.ps1
+
+The analyzer reads only the newest runtime log under %LOCALAPPDATA%\DexNom Ultra Performance v0.1\logs and writes a text summary under Downloads. It reports heavy-scene samples (500+ draws), frame timing, dropped draws, pending/unmapped textures, local-memory counters and selected graphics warnings. It does not modify the runtime or copy game data. Review local paths before sharing the report.
 
 Baseline is a diagnostic reference with no named v0.6 profile-specific renderer tuning. Compare it with UltraSafe1080 in the same save, camera position and scene. A better-looking frame or a higher menu FPS alone is not proof that the world renderer is fixed.
 
