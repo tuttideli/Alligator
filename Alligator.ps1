@@ -2,13 +2,14 @@
 # Windows PowerShell 5.1 compatible. The DexNom engine and game remain local.
 [CmdletBinding()]
 param(
-    [ValidateSet('Launch','Build','Doctor','Profiles','Rollback','Report','Collect','Update')]
+    [ValidateSet('Launch','Build','Doctor','Profiles','Rollback','Report','Collect','TestAMD','Update')]
     [string]$Action = 'Launch',
     [string]$Profile,
     [string]$GamePath,
     [string]$SourceRoot,
     [switch]$Warmup,
-    [switch]$RawLog
+    [switch]$RawLog,
+    [switch]$EnableHairExperiment
 )
 
 $ErrorActionPreference = 'Stop'
@@ -224,6 +225,20 @@ try {
             Write-Section 'COLLECT RUNTIME DIAGNOSTICS'
             Assert-EngineSource $engineRoot
             & (Join-Path $engineRoot 'ultra\Collect-Diagnostics.ps1') -RuntimeDir $runtimeDir
+            break
+        }
+        'TestAMD' {
+            Write-Section 'EXPERIMENTAL AMD RENDERER'
+            if (!$selectedGame -or !(Test-Path -LiteralPath $selectedGame -PathType Leaf)) {
+                throw 'Game executable not found. Set gameExecutable in config\settings.json or pass -GamePath.'
+            }
+            $amdScript = Join-Path $script:RepoRoot 'experiments\Start-AMD-Fork.ps1'
+            if (!(Test-Path -LiteralPath $amdScript -PathType Leaf)) {
+                throw "AMD experiment script missing: $amdScript"
+            }
+            $amdArgs = @{ GamePath = $selectedGame }
+            if ($EnableHairExperiment) { $amdArgs.EnableHairExperiment = $true }
+            & $amdScript @amdArgs
             break
         }
         'Update' {
