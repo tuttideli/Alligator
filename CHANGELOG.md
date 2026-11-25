@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1 - 2026-11-25
+- Add Start-Baseline-Diagnostic.ps1 to launch the unmodified Baseline profile with raw logging.
+- Document the current RX 7600 scene/texture queue and dropped-pipeline symptoms.
+- Add current AMD fork memory and RX 7600 compatibility cautions.
+- Clarify that Alligator is an orchestration layer and does not itself patch renderer shaders or lighting.
+
 ## 0.1.0 - 2026-11-25
 - Add the Alligator PowerShell control entry point and double-click launcher.
 - Add safe fast-forward-only self-update for the Alligator repository.
