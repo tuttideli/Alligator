@@ -2,14 +2,15 @@
 # Windows PowerShell 5.1 compatible. The DexNom engine and game remain local.
 [CmdletBinding()]
 param(
-    [ValidateSet('Launch','Build','Doctor','Profiles','Rollback','Report','Collect','TestAMD','Update')]
+    [ValidateSet('Launch','Build','Doctor','Profiles','Rollback','Report','Collect','TestAMD','TestRX7600','Update')]
     [string]$Action = 'Launch',
     [string]$Profile,
     [string]$GamePath,
     [string]$SourceRoot,
     [switch]$Warmup,
     [switch]$RawLog,
-    [switch]$EnableHairExperiment
+    [switch]$EnableHairExperiment,
+    [string]$FidelityFxDir
 )
 
 $ErrorActionPreference = 'Stop'
@@ -154,6 +155,7 @@ try {
     $runtimeDir = Get-RuntimeDirectory $config
     $selectedGame = Get-SelectedGamePath $config $runtimeDir $GamePath
     $selectedProfile = if (![string]::IsNullOrWhiteSpace($Profile)) { $Profile } else { Get-Setting $config 'defaultProfile' 'UltraSafe1080' }
+    $selectedFidelityFxDir = if (![string]::IsNullOrWhiteSpace($FidelityFxDir)) { Resolve-UserPath $FidelityFxDir } else { Resolve-UserPath (Get-Setting $config 'fidelityFxDirectory' '') }
 
     # The v0.6 package keeps its start script under ultra\\Start-Ultra.ps1.
     # This check avoids confusing the external source checkout with the installed runtime.
@@ -228,6 +230,20 @@ try {
             Write-Section 'COLLECT RUNTIME DIAGNOSTICS'
             Assert-EngineSource $engineRoot
             & (Join-Path $engineRoot 'ultra\Collect-Diagnostics.ps1') -RuntimeDir $runtimeDir
+            break
+        }
+        'TestRX7600' {
+            Write-Section 'RX 7600 TESTED VIctory FORK | PEAU3'
+            if (!$selectedGame -or !(Test-Path -LiteralPath $selectedGame -PathType Leaf)) {
+                throw 'Game executable not found. Set gameExecutable in config\settings.json or pass -GamePath.'
+            }
+            $rx7600Script = Join-Path $script:RepoRoot 'experiments\Start-RX7600-Peau3.ps1'
+            if (!(Test-Path -LiteralPath $rx7600Script -PathType Leaf)) {
+                throw "RX 7600 experiment script missing: $rx7600Script"
+            }
+            $rxArgs = @{ GamePath = $selectedGame }
+            if ($selectedFidelityFxDir) { $rxArgs.FidelityFxDir = $selectedFidelityFxDir }
+            & $rx7600Script @rxArgs
             break
         }
         'TestAMD' {
