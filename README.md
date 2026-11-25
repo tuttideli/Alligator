@@ -6,12 +6,13 @@ It keeps orchestration, profile selection, diagnostics and self-update logic sep
 
 ## Included
 
-- Alligator.ps1: Windows PowerShell 5.1 entry point for Launch, Build, Doctor, Profiles, Rollback, Report, Collect, TestAMD and Update.
+- Alligator.ps1: Windows PowerShell 5.1 entry point for Launch, Build, Doctor, Profiles, Rollback, Report, Collect, TestAMD, TestRX7600 and Update.
 - Start-Alligator.cmd: double-click launcher for the normal DexNom Ultra v0.6 profile.
 - Start-Baseline-Diagnostic.ps1: launches the unmodified Baseline profile with raw logging for controlled visual/performance diagnosis.
 - Analyze-LastRendererRun.ps1: summarizes the latest runtime log, including heavy-scene frame samples, dropped draws, texture backlog, memory counters and graphics warnings.
 - updater/Update.ps1: fast-forward-only Git self-update for a clean Alligator checkout. It updates this repository only.
-- experiments/Start-AMD-Fork.ps1: isolated build/run of a reviewed AMD-oriented VIctory fork snapshot. It does not replace the existing DexNom Ultra runtime.
+- experiments/Start-AMD-Fork.ps1: isolated build/run of a reviewed AMD-oriented VIctory fork snapshot.
+- experiments/Start-RX7600-Peau3.ps1: isolated release build/run of a VIctory fork commit measured on an RX 7600 8 GB.
 - Local config is created from config/settings.example.json; the actual config/settings.json is ignored by Git.
 - Windows CI validates PowerShell syntax and JSON and rejects tracked game/runtime artifacts.
 
@@ -42,6 +43,7 @@ It keeps orchestration, profile selection, diagnostics and self-update logic sep
     .\Alligator.ps1 -Action Build
     .\Alligator.ps1 -Action Rollback
     .\Alligator.ps1 -Action Update
+    .\Alligator.ps1 -Action TestRX7600
 
 The default profile is UltraSafe1080. It omits v0.6's material-demand and long texture-bake experiments. This is a controlled comparison profile, not a promise of high FPS. Display720 changes the title display mode; it does not guarantee a lower internal render resolution.
 
@@ -79,6 +81,26 @@ The optional hair shader test remains experimental:
 
 Do not enable experimental ray tracing on this fork. The first world load may take minutes while pipelines are created. Do not judge performance during cold shader compilation.
 
+## RX 7600-tested renderer experiment (Peau3)
+
+A separate community fork reports a Windows test on an AMD RX 7600 8 GB: about 6.2-6.5 FPS in the tested prison scene, with buildings, cells, characters, hair, skin and sky rendered. That run used 32 GB physical RAM, a 32 GB page file and about 21 GB of memory during a 10-minute session. It is the closest public hardware match found for the user's RX 7600, but it is not a guarantee for other scenes or a 16 GB system-RAM configuration.
+
+Alligator pins the exact measured Peau3 source commit (`b74ac64da2e289cc632980cf8e508c2d1ba909ac`) and builds/runs it in separate engine, build, cache, data and log folders. It does not replace or rebuild DexNom v0.6, change game files, change registry/TDR settings or delete existing caches.
+
+The tested profile needs the PC FidelityFX SDK file `amd_fidelityfx_upscaler_dx12.dll` to render internally at 1080p and upscale to 4K. Set `fidelityFxDirectory` in local `config/settings.json`, pass `-FidelityFxDir`, or provide the path when prompted. The first release build and first shader/pipeline load can take time.
+
+Run:
+
+    .\Alligator.ps1 -Action TestRX7600
+
+The fork's measured setup used `VICTORY_TEXTURE_HALF=2`, `VICTORY_STAGING_POOL_MB=1024`, `VICTORY_VRAM_HYSTERESIS=85,75`, `VICTORY_AMBIENT=off`, `VICTORY_WAVE_WIDE=1`, `VICTORY_SHADER_OPT=0` and FSR scale 0.5. The launcher applies the full Peau3 environment from the fork's handoff notes. It requires a separate explicit `TEST` confirmation before launching. On systems with less than 32 GB RAM, it also warns and asks for `LOW-RAM-TEST`; the run can page heavily, stutter or fail. It refuses to continue when the currently allocated page file is under 20 GB. Alligator will not enlarge the page file automatically.
+
+Known limitations from the fork's own handoff: random chrome/black texture artifacts can remain on clothes, faces and posters; streamed textures can arrive late; this is still an experimental compatibility runtime, not a fully playable console-equivalent build. A separate unbuilt `fix/partly-clamp` branch targets partially streamed texture mips, but it is not included because it had not passed a Windows build and game test when reviewed.
+
+Source and measured result:
+- https://github.com/AntoninMichelq/VIctory-forkAMD
+- https://github.com/AntoninMichelq/VIctory-forkAMD/commit/b74ac64da2e289cc632980cf8e508c2d1ba909ac
+- https://github.com/AntoninMichelq/VIctory-forkAMD/blob/main/HANDOFF.md
 ## Important separation
 
 - Alligator self-updates from this Git repository.
