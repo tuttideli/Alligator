@@ -1,0 +1,42 @@
+name: Alligator validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  powershell-and-json:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse PowerShell scripts
+        shell: powershell
+        run: |
+          $files = Get-ChildItem -Path . -Filter *.ps1 -Recurse
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($file.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Error "$($file.FullName): $($_.Message)" }
+              throw "PowerShell syntax errors in $($file.FullName)"
+            }
+          }
+      - name: Validate JSON files
+        shell: powershell
+        run: |
+          $files = Get-ChildItem -Path . -Filter *.json -Recurse
+          foreach ($file in $files) {
+            Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json | Out-Null
+          }
+      - name: Ensure local secrets and game data are not tracked
+        shell: powershell
+        run: |
+          $tracked = git ls-files
+          $bad = $tracked | Where-Object {
+            $_ -match '(^|/)(settings.json|saves?|cache|shader-cache|runtime-logs|session-reports|memory-dumps)(/|$)' -or
+            $_ -match '.(exe|dll|sav|dmp|bin)$'
+          }
+          if ($bad) { $bad | ForEach-Object { Write-Error "Forbidden tracked file: $_" }; throw 'Repository contains local game/runtime data.' }
