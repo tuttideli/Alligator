@@ -78,6 +78,13 @@ foreach ($relative in $required) {
 
 New-Item -ItemType Directory -Path $cacheDir, $dataDir -Force | Out-Null
 
+Write-Warning 'Hardware caution: the reviewed fork README reports about 22 GB of RAM use and more VRAM than a 16 GB card budget in some play sessions. This PC has 16 GB system RAM and an 8 GB RX 7600, so paging or out-of-memory/device-removal is possible.'
+$answer = Read-Host 'For a short experimental test, type TEST to continue; anything else cancels'
+if ($answer -cne 'TEST') {
+    Write-Host 'Test cancelled. The existing DexNom Ultra installation was not changed.' -ForegroundColor Yellow
+    return
+}
+
 Write-Host 'Compiling the AMD fork using its documented diagnostics build...' -ForegroundColor Cyan
 Push-Location -LiteralPath $engineRoot
 try {
