@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 - 2026-11-25
+- Add Analyze-LastRendererRun.ps1 to summarize heavy-scene FPS, dropped draws, texture backlog, memory counters and graphics warnings from the latest runtime log.
+- Expand diagnostic guidance for incomplete characters/materials and overexposed scene surfaces.
+- Keep Alligator read-only against game, runtime binaries, caches and saves during log analysis.
+
 ## 0.1.1 - 2026-11-25
 - Add Start-Baseline-Diagnostic.ps1 to launch the unmodified Baseline profile with raw logging.
 - Document the current RX 7600 scene/texture queue and dropped-pipeline symptoms.
