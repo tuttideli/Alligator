@@ -56,7 +56,7 @@ if (!(Test-Path -LiteralPath (Join-Path $engineRoot '.git') -PathType Container)
     if ($changes.Count -gt 0) {
         throw 'The experiment source has local changes. Commit or back them up before continuing.'
     }
-    Invoke-Git @('-C', $engineRoot, 'fetch', '--no-tags', 'origin', $reviewedCommit)
+    Invoke-Git @('-C', $engineRoot, 'fetch', '--no-tags', 'origin', 'main')
 }
 
 Invoke-Git @('-C', $engineRoot, 'checkout', '--detach', $reviewedCommit)
