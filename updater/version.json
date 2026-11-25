@@ -2,8 +2,8 @@
   "product": "Alligator",
   "displayName": "DexNom Ultra launcher",
   "channel": "stable",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minimumUpdaterVersion": "0.1.0",
-  "releaseNotes": "Adds a raw-log Baseline diagnostic launcher and updates RX 7600 rendering and AMD fork compatibility guidance.",
+  "releaseNotes": "Adds automatic analysis of renderer log counters and graphics warnings for heavy-scene diagnosis.",
   "files": []
 }
