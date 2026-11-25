@@ -7,50 +7,50 @@ Research snapshot: 25 November 2026. Public fork results are single-machine obse
 The DexNom Ultra v0.6 HUD shows approximately:
 - 0.7 FPS and 1,437.9 ms/frame
 - 3,577 draws/frame
-- 3,455 draws/frame reported as dropped without a host pipeline
-- GPU wait 408.8 ms, CPU prep 555.0 ms, copy-back 451.6 ms
+- 3,455 dropped draws/frame without a ready host pipeline
+- GPU wait 408.8 ms, CPU preparation 555.0 ms, copy-back 451.6 ms
 - 3,035 MB process RAM
 
-The dropped counter is not ordinary display-frame loss. The renderer reports draws/dispatches that have no host pipeline, including shaders that did not translate, pipelines refused by the D3D12 driver, and pipelines not ready within the current frame's budget. This can plausibly explain missing skin/material/geometry. The HUD alone cannot tell which reason dominates; the matched runtime log does.
+The code defines a host pipeline as unavailable when one of its shaders does not translate, the host driver refuses the pipeline, or the pipeline is still being made. The dropped count aggregates these causes. It is therefore evidence of major renderer pipeline coverage/creation problems, but the HUD number alone cannot identify which shader or driver failure dominates. The matching detailed runtime log is needed.
 
-The diagnostic timing categories can overlap. GPU wait is time attributed to waiting for submitted GPU work, not a direct GPU-utilization measurement. The v0.6 source implements the counters in `crates/victory-gpu/src/host.rs`, `pipeline.rs` and `pipeline/host.rs`.
+The timing categories can overlap. GPU wait is the renderer's CPU-side wait for submitted GPU work, not a direct hardware utilization reading. The source records the aggregate and per-reason drop messages in `crates/victory-gpu/src/pipeline.rs` and `host.rs`.
 
-The v0.6 source is based on the upstream snapshot documented in its manifest. Its own changelog says the v0.6 visual changes do not complete the game's ray-traced lighting, shader coverage or all materials. Its default `UltraVisual1080` profile enables material-demand sampling and additional early/bake texture work (24 ms / 2500 ms). `UltraSafe1080` omits those experiments and is a better comparison baseline; neither profile is a renderer rewrite.
+The v0.6 `UltraVisual1080` profile enables material-demand sampling plus early/bake texture work (24 ms / 2500 ms). The source changelog itself warns this may lengthen loading or lower FPS. `UltraSafe1080` disables those two experiments and is a better controlled baseline. Neither repairs missing translated shaders.
 
 ## Public projects reviewed
 
 ### Marvisak/VIctory
-
-The upstream runtime and D3D12/shader translation base:
+Base runtime, D3D12 backend and shader translator:
 https://github.com/Marvisak/VIctory
 
 ### fxceless/victory-fork
-
-README snapshot dated 25 November 2026 reports 8–10 FPS in first rooms on one Windows 11 PC with an RTX 4070 12 GB, but shadowed areas remain black. Its README documents opt-in asynchronous submission, queue scheduling, indirect draw handling, card-memory buffer placement and shader changes. These are a divergent codebase and a different GPU. Some latest experiments are explicitly unmeasured or have unresolved stability problems:
+README snapshot dated 25 November 2026 reports 8–10 FPS in the first rooms on one Windows 11 PC with an RTX 4070 12 GB, while shadowed areas remain black. It documents opt-in submission scheduling, indirect drawing, card-memory placement, copy batching and shader changes. This is a divergent codebase and a different GPU; some newer experiments are unmeasured or have unresolved stability issues:
 https://github.com/fxceless/victory-fork
 
 ### Belobug/VIctory-Belobug-AMD
-
-README snapshot dated 25 November 2026 reports 5–8 FPS on a single RX 9070 XT 16 GB, Ryzen 7 9800X3D and 64 GB RAM. It contains AMD-focused corrections for helper-pixel/quad reads (including skin), blend-shape skinning, hair/material shaders, integer targets, shadow/depth handling and GPU memory. It uses an ambient-light approximation that follows the sky because the game's ray-traced indirect lighting is not yet working. The README still lists missing in-game phone rendering and very high memory use. RX 9070 XT 16 GB is substantially more capable than this user's RX 7600 8 GB, so the reported FPS is not transferable:
+README snapshot dated 25 November 2026 reports 5–8 FPS on one RX 9070 XT 16 GB, Ryzen 7 9800X3D and 64 GB RAM. It documents AMD-specific changes for helper-pixel/quad reads, blend-shape skinning, hair/material shaders, integer render targets, depth/shadows and GPU memory. It also uses an ambient-light approximation that follows the sky because full ray-traced indirect light is not working. The README still lists known missing shaders, high memory use and a broken in-game phone scene. RX 9070 XT 16 GB is substantially more capable than the user's RX 7600 8 GB; the published FPS result is not transferable:
 https://github.com/Belobug/VIctory-Belobug-AMD
 
-### WillyboPeep/victory-all-forks
+Reviewed experiment commit: `4f62c2a5e27e7beebf3e8d68f77898e43dc7b77c`.
 
-This is explicitly a test merge of upstream and community forks, not an original implementation. Its documentation lists changes relevant to the user's defects: meshlet culling, descriptor exhaustion, GPU-written light readback, fog, shadow masks, hair, blend-shape skinning, fire and material shaders. The README reports a 5.7 FPS result in one matched view on an RTX 4090 24 GB after selected changes; other test figures are lower. It still lists black shadows and incomplete ray tracing:
+### WillyboPeep/victory-all-forks
+This is explicitly a test merge of upstream and community forks, not an original implementation. Its documentation lists fixes relevant to the reported defects: meshlet culling, descriptor exhaustion, GPU-written light readback, fog, shadow masks, hair, blend-shape skinning, fire and material shaders. It reports a 5.7 FPS result in one matched view on an RTX 4090 24 GB after selected changes; other test runs are lower. It still lists black shadows and incomplete ray tracing:
 https://github.com/WillyboPeep/victory-all-forks
 https://github.com/WillyboPeep/victory-all-forks/blob/main/ALL-FORKS.md
 
 ### XCL
-
-XCL is a separate Xbox compatibility project. Its GPL-2.0-only license is not a drop-in license match for VIctory's GPL-3.0-or-later code. Use it as a reference for concepts only unless legal compatibility is established:
+XCL is a separate Xbox compatibility project with a different renderer/translator and GPL-2.0-only licensing. Its code is not a drop-in source for the GPL-3.0-or-later VIctory-derived engine. It is a reference for ideas only unless license compatibility is established:
 https://github.com/ivall/xcl
 
-## What to do next on the RX 7600
+## Practical plan for RX 7600 8 GB
 
-1. Let the current game session end normally so v0.6 exports its matched post-game report. Review local paths/account folder names before sharing.
-2. Inspect `last-runtime-lines.txt` and `first-graphics-events.txt` for repeated lines such as `shader does not translate`, `host pipeline refused`, `no host pipeline`, `not implemented`, texture memory/budget warnings, or device removal.
-3. Run the same save/scene/camera using `UltraSafe1080` as the comparison. Do not change caches or several experimental switches together.
-4. Only then choose a renderer branch/patch. Prefer a separate experimental checkout and separate runtime so the known-working v0.6 binaries remain available for rollback.
-5. Port one compatible GPL-3.0-or-later change at a time, keep original authors/commit history and license notices, rebuild, then compare the same scene.
+1. Preserve the known-working v0.6 runtime and its shader cache.
+2. First test `UltraSafe1080` against the current profile under the same save, camera and scene. Do not change cache state or several profile variables together.
+3. Test the isolated AMD fork using `Alligator.ps1 -Action TestAMD`. It builds the reviewed commit in a separate folder with separate cache and save/data directories. Compare after shader/pipeline creation has settled.
+4. If skin/hair is still missing, run the optional `-EnableHairExperiment` test as a separate run. The fork README says some hair/ray-related shaders still fail to translate, so this is not a guaranteed correction.
+5. Inspect `Dropped ... without a host pipeline: <reason>` lines from the per-run log. Port only a specific fix that matches the observed reason, with author attribution and compatible license.
+6. Benchmark one change at a time and keep a binary rollback.
 
-Do not import RX 4090/4070/9070 XT memory sizes or performance switches wholesale into an RX 7600 8 GB setup. In particular, a 4096 MB card-window setting measured on a 24 GB RTX 4090 is not a safe default for an 8 GB card. Do not use RT or driver timeout/registry hacks as an FPS shortcut.
+Do not import memory settings tuned for 12/16/24 GB GPUs into an 8 GB RX 7600. Do not enable ray tracing on the AMD test fork: its own README reports device removal during ray-enabled sessions. Avoid registry/TDR changes and broad cache deletion.
+
+The immediate target is to reduce missing host pipelines and render the scene correctly; only then can FPS tuning be meaningfully measured.
