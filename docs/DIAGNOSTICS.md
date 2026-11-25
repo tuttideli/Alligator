@@ -13,21 +13,34 @@ Diagnostic timing categories can overlap and should not be added as if they were
 
 ## Current RX 7600 symptoms (25 November 2026)
 
-The later indoor screenshot shows ceiling fixtures emitting light while much of the room remains very dark; character materials and surface detail are incomplete. This is consistent with the renderer's known missing lighting/shader work, not something a display brightness slider can reliably repair.
+The later indoor screenshot shows ceiling fixtures emitting light while much of the room remains very dark; character materials and surface detail are incomplete. The latest exterior screenshot still shows incomplete characters/materials, a highly washed-out bright surface and poor scene detail. These are renderer presentation/coverage symptoms, not something a desktop brightness slider can reliably repair.
 
 The accompanying runtime log initially reported roughly 29-30 FPS while it was drawing only 6-13 draws per frame. Once the scene became complex, samples fell to about 0.2-1.1 FPS, with thousands of draws, hundreds to thousands of dropped draws, and a texture queue that rose above 18,000 entries. One sample reported 6,304 dropped draws; another reported 1.1 FPS with roughly 1,158 draws, 580 dropped draws and about 10,414 pending textures. The log also showed the local-memory counter reaching roughly 7.5 GiB against a displayed budget near 6.3 GiB, plus repeated buffer-view refusals.
 
 These observations do not prove that one counter alone causes every visual defect. They do show that the early 30 FPS readings were not representative of the fully populated scene and that both renderer coverage and resource pressure need attention.
 
-## Run a controlled baseline
+## Run and analyze a controlled baseline
 
 From the Alligator folder, run:
 
     .\Start-Baseline-Diagnostic.ps1
 
-This wrapper always launches the existing Baseline profile and enables raw logging. It is intended to compare against UltraSafe1080 without changing the renderer source, game files or shader cache.
+This wrapper always launches the existing Baseline profile and enables raw logging. It does not rebuild the renderer, delete shader caches, change game files or patch shaders.
 
-Keep the same save, camera, scene and cache state. Let shader and texture streaming settle before measuring. Record the FPS, ms/frame, draws, dropped count, texture queue, local/non-local memory, CPU prep, GPU wait and copy-back. A menu or loading-screen FPS result is not a world-scene benchmark.
+After closing the game/runtime, run:
+
+    .\Analyze-LastRendererRun.ps1
+
+The analyzer selects the newest run-*.log under the configured runtime's logs folder and creates a text summary in Downloads. It reports:
+- Total frame samples and samples with 500 or more draws (a rough heavy-scene filter, not a formal benchmark).
+- Median FPS and frame time for those heavy-scene samples.
+- Maximum dropped draws, pending textures and unmapped textures observed.
+- Maximum local-memory use and its displayed budget.
+- Lines about missing host pipelines, refused buffer views, shader translation, root signatures and device removal.
+
+The analyzer is read-only with respect to the runtime. It does not modify the game, renderer, settings, caches or saves. The report may still contain local paths; review it before sharing.
+
+Keep the same save, camera, scene and cache state. Let shader and texture streaming settle before measuring. A menu or loading-screen FPS result is not a world-scene benchmark.
 
 ## What to collect after a run
 
