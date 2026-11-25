@@ -1,0 +1,29 @@
+# Local configuration and secrets
+config/settings.json
+*.secret
+.env
+.env.*
+
+# Local game/runtime data
+state/
+cache/
+shader-cache/
+saves/
+logs/
+runtime-logs/
+session-reports/
+memory-dumps/
+
+# Build output
+target/
+bin/
+obj/
+*.pdb
+*.ilk
+*.obj
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
