@@ -1,0 +1,9 @@
+{
+  "product": "Alligator",
+  "displayName": "DexNom Ultra updater",
+  "channel": "stable",
+  "version": "0.0.0",
+  "minimumUpdaterVersion": "0.0.0",
+  "releaseNotes": "Repository initialized. Update delivery is not enabled yet.",
+  "files": []
+}
